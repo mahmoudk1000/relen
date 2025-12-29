@@ -10,7 +10,7 @@ import (
 	"github.com/mahmoudk1000/verdb/internal/utils"
 )
 
-func createCommand() *cobra.Command {
+func NewCreateCommand() *cobra.Command {
 	var (
 		link          string
 		description   string

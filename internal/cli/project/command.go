@@ -9,7 +9,7 @@ import (
 
 const projectsFileName string = "projects.json"
 
-func NewCommand() *cobra.Command {
+func NewProjectCommand() *cobra.Command {
 	project := &cobra.Command{
 		Use:     "project",
 		Aliases: []string{"p", "proj"},
@@ -23,8 +23,8 @@ func NewCommand() *cobra.Command {
 		},
 	}
 
-	project.AddCommand(createCommand())
-	project.AddCommand(showCommand())
+	project.AddCommand(NewCreateCommand())
+	project.AddCommand(NewShowCommand())
 
 	return project
 }

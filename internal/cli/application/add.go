@@ -6,7 +6,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func addCommand() *cobra.Command {
+func NewAddCommand() *cobra.Command {
 	var (
 		link        string
 		description string

@@ -9,7 +9,7 @@ import (
 	"github.com/mahmoudk1000/verdb/internal/utils"
 )
 
-func showCommand() *cobra.Command {
+func NewShowCommand() *cobra.Command {
 	var configBuilder *utils.ConfigBuilder[models.Projects]
 
 	show := &cobra.Command{
@@ -25,18 +25,65 @@ func showCommand() *cobra.Command {
 			}
 			return nil
 		},
-		RunE: func(cmd *cobra.Command, args []string) error {
-			err := showJSONProject(configBuilder, args[0])
-			if err != nil {
-				return fmt.Errorf("failed to show project: %w", err)
-			}
-			return nil
-		},
+	}
+
+	flags := show.Flags()
+	flags.Bool("json", false, "output in JSON format")
+
+	show.RunE = func(cmd *cobra.Command, args []string) error {
+		var (
+			p   string
+			err error
+		)
+
+		jsonFlag, _ := show.Flags().GetBool("json")
+
+		switch {
+		case jsonFlag:
+			p, err = showProject(
+				configBuilder,
+				args[0],
+				func(data any) (string, error) {
+					return utils.FormatJSON(data)
+				},
+			)
+		default:
+			p, err = showProject(
+				configBuilder,
+				args[0],
+				func(data any) (string, error) {
+					return utils.Format(data)
+				},
+			)
+		}
+
+		if err != nil {
+			return err
+		}
+		fmt.Println(p)
+
+		return nil
 	}
 
 	return show
 }
 
-func showJSONProject(configBuilder *utils.ConfigBuilder[models.Projects], name string) error {
-	return nil
+func showProject(
+	configBuilder *utils.ConfigBuilder[models.Projects],
+	name string,
+	output func(any) (string, error),
+) (string, error) {
+	projects := configBuilder.Model()
+
+	p, exists := projects.Project[name]
+	if !exists {
+		return "", fmt.Errorf("project '%s' does not exist", name)
+	}
+
+	fmtP, err := output(p)
+	if err != nil {
+		return "", err
+	}
+
+	return fmtP, nil
 }

@@ -7,7 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func NewCommand() *cobra.Command {
+func NewApplicationCommand() *cobra.Command {
 	application := &cobra.Command{
 		Use:   "application",
 		Short: "manage application",
@@ -20,7 +20,7 @@ func NewCommand() *cobra.Command {
 		},
 	}
 
-	application.AddCommand(addCommand())
+	application.AddCommand(NewAddCommand())
 
 	return application
 }
