@@ -25,20 +25,10 @@ func NewConfigBuilder[T any](configFileName string, model T) *ConfigBuilder[T] {
 
 	path := filepath.Join(configDir, baseVerDBConfigDir, configFileName)
 
-	cb := &ConfigBuilder[T]{
+	return &ConfigBuilder[T]{
 		path:           path,
 		configFileName: configFileName,
 		model:          model,
-	}
-
-	cb.initializeModel()
-
-	return cb
-}
-
-func (cb *ConfigBuilder[T]) initializeModel() {
-	if v, ok := any(&cb.model).(interface{ InitializeMap() }); ok {
-		v.InitializeMap()
 	}
 }
 
@@ -60,8 +50,6 @@ func (cb *ConfigBuilder[T]) BuildConfigDir() error {
 		}
 	}
 
-	cb.initializeModel()
-
 	return nil
 }
 
@@ -69,6 +57,9 @@ func (cb *ConfigBuilder[T]) Model() T {
 	return cb.model
 }
 
+func (cb *ConfigBuilder[T]) SetModel(model T) {
+	cb.model = model
+}
 
 func (cb *ConfigBuilder[T]) Save() error {
 	f, err := os.OpenFile(

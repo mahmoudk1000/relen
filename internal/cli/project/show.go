@@ -27,6 +27,8 @@ func NewShowCommand() *cobra.Command {
 		},
 	}
 
+	show.SilenceUsage = true
+
 	flags := show.Flags()
 	flags.Bool("json", false, "output in JSON format")
 
@@ -75,15 +77,15 @@ func showProject(
 ) (string, error) {
 	projects := configBuilder.Model()
 
-	p, exists := projects.Project[name]
-	if !exists {
-		return "", fmt.Errorf("project '%s' does not exist", name)
+	for _, p := range projects.Project {
+		if p.Name == name {
+			fmpP, err := output(p)
+			if err != nil {
+				return "", err
+			}
+			return fmpP, nil
+		}
 	}
 
-	fmtP, err := output(p)
-	if err != nil {
-		return "", err
-	}
-
-	return fmtP, nil
+	return "", fmt.Errorf("project '%s' not found", name)
 }

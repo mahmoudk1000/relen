@@ -32,13 +32,13 @@ func NewCreateCommand() *cobra.Command {
 		},
 	}
 
-	create.SilenceUsage = true
-
 	flags := create.Flags()
+	flags.SortFlags = false
 	flags.StringVarP(&link, "link", "l", "", "link to the project")
 	flags.StringVarP(&description, "description", "d", "", "description of the application")
 
 	create.RunE = func(cmd *cobra.Command, args []string) error {
+		cmd.SilenceUsage = true
 		err := createJSONProject(configBuilder, args[0], link, description)
 		if err != nil {
 			return fmt.Errorf("failed to create project: %w", err)
@@ -56,15 +56,22 @@ func createJSONProject(
 ) error {
 	projects := configBuilder.Model()
 
-	if _, exists := projects.Project[name]; exists {
-		return fmt.Errorf("project '%s' already exists", name)
+	for _, p := range projects.Project {
+		if p.Name == name {
+			return fmt.Errorf("project with name '%s' already exists", name)
+		}
 	}
 
-	projects.Project[name] = models.Project{
+	p := models.Project{
+		Name:        name,
 		Link:        link,
 		Description: desc,
 		CreatedAt:   time.Now().UTC(),
+		UpdatedAt:   time.Now().UTC(),
 	}
+
+	projects.Project = append(projects.Project, p)
+	configBuilder.SetModel(projects)
 
 	if err := configBuilder.Save(); err != nil {
 		return fmt.Errorf("failed to save project: %w", err)
