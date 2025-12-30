@@ -18,10 +18,12 @@ func Format(data any) (string, error) {
 	sb.WriteString(fmt.Sprintf("%s:\n", val.Type().Name()))
 
 	for i := 0; i < val.NumField(); i++ {
-		field := val.Field(i)
-		fieldName := val.Type().Field(i).Name
+		key := val.Type().Field(i).Name
+		value := val.Field(i)
 
-		sb.WriteString(fmt.Sprintf("    - %s: %v\n", fieldName, field.Interface()))
+		if !value.IsZero() {
+			sb.WriteString(fmt.Sprintf("    - %s: %v\n", key, value.Interface()))
+		}
 	}
 
 	return sb.String(), nil
