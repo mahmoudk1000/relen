@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	baserelenConfigDir = "relen"
+	baseRelenConfigDir = "relen"
 )
 
 type ConfigBuilder[T any] struct {
@@ -23,7 +23,7 @@ func NewConfigBuilder[T any](configFileName string, model T) *ConfigBuilder[T] {
 		return nil
 	}
 
-	path := filepath.Join(configDir, baserelenConfigDir, configFileName)
+	path := filepath.Join(configDir, baseRelenConfigDir, configFileName)
 
 	return &ConfigBuilder[T]{
 		path:           path,

@@ -12,21 +12,23 @@ import (
 	"github.com/mahmoudk1000/relen/internal/cli/project"
 )
 
-func main() {
-	var relen = &cobra.Command{
-		Use:   "relen",
-		Short: "A serious, well-scoped versioning tool.",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			if err := cmd.Help(); err != nil {
-				return err
-			}
-			return nil
-		},
-	}
+var relen = &cobra.Command{
+	Use:   "relen",
+	Short: "A serious, well-scoped versioning tool.",
+	RunE: func(cmd *cobra.Command, args []string) error {
+		if err := cmd.Help(); err != nil {
+			return err
+		}
+		return nil
+	},
+}
 
+func init() {
 	relen.AddCommand(project.NewProjectCommand())
 	relen.AddCommand(application.NewApplicationCommand())
+}
 
+func main() {
 	if err := relen.Execute(); err != nil {
 		os.Exit(1)
 	}

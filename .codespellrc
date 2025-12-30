@@ -1,2 +1,3 @@
-allow:
-  - relen
+[codespell]
+skip = flake.lock
+ignore-words-list = relen, json
