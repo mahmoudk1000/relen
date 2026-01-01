@@ -45,6 +45,7 @@
           default = pkgs.mkShell {
             packages = with pkgs; [
               cobra-cli
+              sqlc
             ];
             buildInputs = with pkgs; [
               go

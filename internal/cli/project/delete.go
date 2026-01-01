@@ -1,18 +1,17 @@
 package project
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/spf13/cobra"
 
-	"github.com/mahmoudk1000/relen/internal/models"
-	"github.com/mahmoudk1000/relen/internal/utils"
+	"github.com/mahmoudk1000/relen/internal/database"
+	"github.com/mahmoudk1000/relen/internal/db"
 )
 
 func NewDeleteCommand() *cobra.Command {
-	var (
-		configBuilder *utils.ConfigBuilder[models.Projects]
-	)
+	var queries *database.Queries
 
 	delete := &cobra.Command{
 		Use:     "delete <project-name>",
@@ -20,11 +19,7 @@ func NewDeleteCommand() *cobra.Command {
 		Short:   "Delete a project",
 		Args:    cobra.ExactArgs(1),
 		PreRunE: func(cmd *cobra.Command, args []string) error {
-			configBuilder = utils.NewConfigBuilder(projectsFileName, models.Projects{})
-			err := configBuilder.BuildConfigDir()
-			if err != nil {
-				return err
-			}
+			queries = db.Get()
 
 			return nil
 		},
@@ -35,12 +30,14 @@ func NewDeleteCommand() *cobra.Command {
 
 	delete.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
+		ctx := cmd.Context()
+
 		if yes, _ := cmd.Flags().GetBool("yes-i-am-sure"); !yes {
 			fmt.Println("Please confirm project deletion with --yes-i-am-sure flag")
 			return nil
 		}
 
-		err := deleteProject(args[0], configBuilder)
+		err := deleteProject(ctx, args[0], queries)
 		if err != nil {
 			return fmt.Errorf("failed to delete project: %w", err)
 		}
@@ -52,21 +49,14 @@ func NewDeleteCommand() *cobra.Command {
 	return delete
 }
 
-func deleteProject(name string, cb *utils.ConfigBuilder[models.Projects]) error {
-	projects := cb.Model()
-
-	for i, p := range projects.Project {
-		if p.Name == name {
-			projects.Project = append(projects.Project[:i], projects.Project[i+1:]...)
-
-			cb.SetModel(projects)
-			if err := cb.Save(); err != nil {
-				return fmt.Errorf("failed to save updated projects: %w", err)
-			}
-
-			return nil
-		}
+func deleteProject(ctx context.Context, name string, q *database.Queries) error {
+	exists, err := q.CheckProjectExistsByName(ctx, name)
+	if err != nil {
+		return fmt.Errorf("failed to check if project exists: %w", err)
+	}
+	if !exists {
+		return fmt.Errorf("project '%s' does not exist", name)
 	}
 
-	return fmt.Errorf("project '%s' not found", name)
+	return q.DeleteProjectByName(ctx, name)
 }
