@@ -3,6 +3,10 @@ INSERT INTO projects (name, link,  description, created_at)
 VALUES ($1, $2, $3, $4)
 RETURNING *;
 
+-- name: GetProjectIdByName :one
+SELECT id FROM projects
+WHERE name = $1;
+
 -- name: CheckProjectExistsByName :one
 SELECT EXISTS (
     SELECT 1 FROM projects WHERE name = $1
@@ -18,7 +22,7 @@ DELETE FROM projects
 WHERE name = $1;
 
 -- name: ListAllProjects :many
-SELECT name FROM projects;
+SELECT * FROM projects;
 
 -- name: CreateProjectVersion :one
 INSERT INTO project_versions (id, project_id, version, description, created_at)

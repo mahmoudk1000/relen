@@ -24,9 +24,8 @@ func NewCreateCommand() *cobra.Command {
 		Aliases: []string{"c", "new"},
 		Short:   "add a new application to the project",
 		Args:    cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
-			return nil
 		},
 	}
 

@@ -1,35 +1,88 @@
 package application
 
 import (
+	"context"
+	"database/sql"
 	"fmt"
+	"time"
 
 	"github.com/spf13/cobra"
+
+	"github.com/mahmoudk1000/relen/internal/database"
+	"github.com/mahmoudk1000/relen/internal/db"
 )
 
 func NewAddCommand() *cobra.Command {
 	var (
 		link        string
 		description string
+		queries     *database.Queries
 	)
 
 	add := &cobra.Command{
 		Use:     "add <project_name> <application_name>",
-		Aliases: []string{"c", "new"},
+		Aliases: []string{"a", "new"},
 		Short:   "add a new application to the project",
 		Args:    cobra.ExactArgs(2),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
-			return nil
+		PreRun: func(cmd *cobra.Command, args []string) {
+			queries = db.Get()
 		},
 	}
 
 	flags := add.Flags()
-	flags.StringVarP(&link, "link", "l", "", "link to the project")
-	flags.StringVarP(&description, "description", "d", "", "description of the application")
+	flags.StringVarP(&link, "link", "l", "", "application's link")
+	flags.StringVarP(&description, "description", "d", "", "application's description")
 
 	add.RunE = func(cmd *cobra.Command, args []string) error {
-		fmt.Printf("Adding application '%s' to project '%s'\n", args[1], args[0])
+		cmd.SilenceUsage = true
+		ctx := cmd.Context()
+
+		linkFlag, _ := flags.GetString("link")
+		descFlag, _ := flags.GetString("description")
+
+		if err := addApplication(ctx, args[0], args[1], linkFlag, descFlag, queries); err != nil {
+			return err
+		}
+
 		return nil
 	}
 
 	return add
+}
+
+func addApplication(
+	ctx context.Context,
+	prjName, appName, link, desc string,
+	q *database.Queries,
+) error {
+	pID, err := q.GetProjectIdByName(ctx, prjName)
+	if err != nil {
+		return err
+	}
+
+	exists, err := q.CheckApplicationExistsByName(ctx, appName)
+	if err != nil {
+		return err
+	}
+	if exists {
+		return fmt.Errorf("application with name '%s' already exists", appName)
+	}
+
+	if _, err := q.CreateApplication(ctx, database.CreateApplicationParams{
+		Name:      appName,
+		ProjectID: pID,
+		RepoUrl: sql.NullString{
+			String: link,
+			Valid:  link != "",
+		},
+		Description: sql.NullString{
+			String: desc,
+			Valid:  desc != "",
+		},
+		CreatedAt: time.Now().UTC(),
+	}); err != nil {
+		return err
+	}
+
+	return nil
 }

@@ -1,10 +1,10 @@
 BEGIN;
 
 CREATE TABLE IF NOT EXISTS projects (
-    id SERIAL PRIMARY KEY,
+    id              SERIAL PRIMARY KEY,
     name            TEXT NOT NULL UNIQUE,
-    link            TEXT NULL,
-    description     TEXT NULL,
+    link            TEXT,
+    description     TEXT,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
@@ -48,7 +48,9 @@ CREATE TABLE IF NOT EXISTS project_version_apps (
     PRIMARY KEY (project_version_id, application_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_app_versions_app_id ON application_versions(application_id);
-CREATE INDEX IF NOT EXISTS idx_proj_versions_proj_id ON project_versions(project_id);
+CREATE INDEX IF NOT EXISTS idx_application_versions_app_id ON application_versions(application_id);
+CREATE INDEX IF NOT EXISTS idx_app_versions_app_id ON application_versions(name);
+CREATE INDEX IF NOT EXISTS idx_applications_project_id ON applications(project_id);
+CREATE INDEX IF NOT EXISTS idx_proj_versions_proj_id ON project_versions(name);
 
 COMMIT;

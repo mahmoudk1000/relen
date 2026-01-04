@@ -9,9 +9,8 @@ import (
 
 func NewApplicationCommand() *cobra.Command {
 	application := &cobra.Command{
-		Use:   "application",
-		Short: "manage application",
-		Long:  `manage application within a project`,
+		Use:   "application add|remove|list|show",
+		Short: "Manage applications",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {
 				return err

@@ -20,9 +20,8 @@ func NewShowCommand() *cobra.Command {
 		Aliases: []string{"s"},
 		Short:   "show details of a project",
 		Args:    cobra.ExactArgs(1),
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
-			return nil
 		},
 	}
 
@@ -47,12 +46,12 @@ func NewShowCommand() *cobra.Command {
 
 		switch {
 		case jsonFlag:
-			fmtP, err = utils.FormatJSON(models.DatabaseProjectToProject(p))
+			fmtP, err = utils.FormatJSON(models.ToProject(p))
 			if err != nil {
 				return err
 			}
 		default:
-			fmtP, err = utils.Format(models.DatabaseProjectToProject(p))
+			fmtP, err = utils.Format(models.ToProject(p))
 			if err != nil {
 				return err
 			}
@@ -71,7 +70,6 @@ func showProject(
 	name string,
 	q *database.Queries,
 ) (database.Project, error) {
-
 	exists, err := q.CheckProjectExistsByName(ctx, name)
 	if err != nil {
 		return database.Project{}, fmt.Errorf("failed to check if project exists: %w", err)

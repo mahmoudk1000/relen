@@ -8,6 +8,8 @@ import (
 
 	"github.com/mahmoudk1000/relen/internal/database"
 	"github.com/mahmoudk1000/relen/internal/db"
+	"github.com/mahmoudk1000/relen/internal/models"
+	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
 func NewListCommand() *cobra.Command {
@@ -17,9 +19,8 @@ func NewListCommand() *cobra.Command {
 		Use:     "list",
 		Aliases: []string{"ls"},
 		Short:   "List all projects",
-		PreRunE: func(cmd *cobra.Command, args []string) error {
+		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
-			return nil
 		},
 	}
 
@@ -37,23 +38,29 @@ func NewListCommand() *cobra.Command {
 			return err
 		}
 
+		var fmtP string
+
 		switch {
 		case jsonFlag:
-			// TODO: implement JSON output
-			return nil
+			fmtP, err = utils.FormatJSON(models.ToProjects(ps))
+			if err != nil {
+				return err
+			}
 		default:
-			for _, pName := range ps {
-				fmt.Println(pName)
+			fmtP, err = utils.Format(models.ToProjects(ps))
+			if err != nil {
+				return err
 			}
 		}
 
+		fmt.Println(fmtP)
 		return nil
 	}
 
 	return list
 }
 
-func listProjects(ctx context.Context, q *database.Queries) ([]string, error) {
+func listProjects(ctx context.Context, q *database.Queries) ([]database.Project, error) {
 	ps, err := q.ListAllProjects(ctx)
 	if err != nil {
 		return nil, err
