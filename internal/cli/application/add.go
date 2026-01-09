@@ -10,6 +10,7 @@ import (
 
 	"github.com/mahmoudk1000/relen/internal/database"
 	"github.com/mahmoudk1000/relen/internal/db"
+	"github.com/mahmoudk1000/relen/internal/utils"
 )
 
 func NewAddCommand() *cobra.Command {
@@ -36,13 +37,18 @@ func NewAddCommand() *cobra.Command {
 	add.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 
+		pName, aName, err := utils.ParseProjectSlashApplication(args)
+		if err != nil {
+			return err
+		}
+
 		ctx := cmd.Context()
 		linkFlag, _ := flags.GetString("link")
 		descFlag, _ := flags.GetString("description")
 
 		return addApplication(ctx,
-			args[0],
-			args[1],
+			pName,
+			aName,
 			linkFlag,
 			descFlag,
 			queries,

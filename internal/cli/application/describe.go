@@ -18,6 +18,7 @@ func NewDescribeCommand() *cobra.Command {
 	describe := &cobra.Command{
 		Use:   "describe <project_name> <application_name>",
 		Short: "Describe an application",
+		Args:  cobra.RangeArgs(1, 2),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
 		},
@@ -32,8 +33,13 @@ func NewDescribeCommand() *cobra.Command {
 		ctx := cmd.Context()
 		jsonFlag, _ := cmd.Flags().GetBool("json")
 
+		pName, aName, err := utils.ParseProjectSlashApplication(args)
+		if err != nil {
+			return err
+		}
+
 		var fmtA string
-		a, err := describeApplication(ctx, args[0], args[1], queries)
+		a, err := describeApplication(ctx, pName, aName, queries)
 		if err != nil {
 			return err
 		}

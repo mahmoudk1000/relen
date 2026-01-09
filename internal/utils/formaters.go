@@ -60,12 +60,6 @@ func Format(data any) (string, error) {
 	}
 	sb.WriteString("\n")
 
-	for i := range headers {
-		sb.WriteString(strings.Repeat("-", colWidths[i]))
-		sb.WriteString("  ")
-	}
-	sb.WriteString("\n")
-
 	for _, row := range rows {
 		for i, cell := range row {
 			sb.WriteString(fmt.Sprintf("%-*s  ", colWidths[i], cell))
