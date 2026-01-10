@@ -139,15 +139,15 @@ func (q *Queries) GetLatestApplicationVersionByApplicationName(ctx context.Conte
 	return i, err
 }
 
-const listAllProjectApplications = `-- name: ListAllProjectApplications :many
+const listProjectApplications = `-- name: ListProjectApplications :many
 SELECT id, project_id, name, description, repo_url, created_at FROM applications
 WHERE project_id = (
-  SELECT id FROM projects WHERE projects.name = $1
+  SELECT id FROM projects WHERE projects.id = $1
 )
 `
 
-func (q *Queries) ListAllProjectApplications(ctx context.Context, name string) ([]Application, error) {
-	rows, err := q.db.QueryContext(ctx, listAllProjectApplications, name)
+func (q *Queries) ListProjectApplications(ctx context.Context, id int32) ([]Application, error) {
+	rows, err := q.db.QueryContext(ctx, listProjectApplications, id)
 	if err != nil {
 		return nil, err
 	}

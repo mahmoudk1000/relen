@@ -6,7 +6,7 @@ type Application struct {
 	Name        string `json:"name"`
 	Repo_Url    string `json:"repo,omitempty"`
 	Description string `json:"description,omitempty"`
-	CreatedAt   string `json:"created_at"`
+	Created_At  string `json:"created_at"`
 }
 
 func ToApplication(a database.Application) Application {
@@ -14,7 +14,7 @@ func ToApplication(a database.Application) Application {
 		Name:        a.Name,
 		Repo_Url:    a.RepoUrl.String,
 		Description: a.Description.String,
-		CreatedAt:   a.CreatedAt.Format("2006-01-02T15:04:05 -07:00:00"),
+		Created_At:  a.CreatedAt.Format("2006-01-02T15:04:05 -07:00:00"),
 	}
 }
 

@@ -22,10 +22,10 @@ WHERE applications.name = $1 AND project_id = (
   SELECT id FROM projects WHERE projects.id = $2
 ) RETURNING *;
 
--- name: ListAllProjectApplications :many
+-- name: ListProjectApplications :many
 SELECT * FROM applications
 WHERE project_id = (
-  SELECT id FROM projects WHERE projects.name = $1
+  SELECT id FROM projects WHERE projects.id = $1
 );
 
 -- name: GetLatestApplicationVersionByApplicationName :one

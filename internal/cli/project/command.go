@@ -10,7 +10,7 @@ import (
 func NewProjectCommand() *cobra.Command {
 	project := &cobra.Command{
 		Use:     "project create|delete|list|show|describe",
-		Aliases: []string{"p", "proj"},
+		Aliases: []string{"proj", "projects"},
 		Short:   "Manage projects",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {

@@ -9,8 +9,9 @@ import (
 
 func NewApplicationCommand() *cobra.Command {
 	application := &cobra.Command{
-		Use:   "application add|remove|list|show",
-		Short: "Manage applications",
+		Use:     "application add|remove|list|show",
+		Aliases: []string{"app", "applications"},
+		Short:   "Manage applications",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			if err := cmd.Help(); err != nil {
 				return err
@@ -22,6 +23,7 @@ func NewApplicationCommand() *cobra.Command {
 	application.AddCommand(NewAddCommand())
 	application.AddCommand(NewDeleteCommand())
 	application.AddCommand(NewDescribeCommand())
+	application.AddCommand(NewListCommand())
 
 	return application
 }

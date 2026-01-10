@@ -10,7 +10,7 @@ type Project struct {
 	Name        string `json:"name"`
 	Link        string `json:"link,omitempty"`
 	Description string `json:"description,omitempty"`
-	CreatedAt   string `json:"created_at"`
+	Created_At  string `json:"created_at"`
 }
 
 type FProject struct {
@@ -23,7 +23,7 @@ func ToProject(p database.Project) Project {
 		Name:        p.Name,
 		Link:        p.Link.String,
 		Description: p.Description.String,
-		CreatedAt:   p.CreatedAt.Format(time.RFC1123),
+		Created_At:  p.CreatedAt.Format(time.RFC1123),
 	}
 }
 
