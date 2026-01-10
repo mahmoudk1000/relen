@@ -1,19 +1,26 @@
 BEGIN;
+
 CREATE TABLE IF NOT EXISTS projects (
     id              SERIAL PRIMARY KEY,
     name            TEXT NOT NULL UNIQUE,
+    status          TEXT NOT NULL DEFAULT 'active',
     link            TEXT,
     description     TEXT,
-    created_at      TIMESTAMPTZ NOT NULL DEFAULT now()
+    metadata        JSONB,
+    created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
 CREATE TABLE IF NOT EXISTS applications (
     id              SERIAL PRIMARY KEY,
     project_id      INTEGER NOT NULL REFERENCES projects(id) ON DELETE CASCADE,
     name            TEXT NOT NULL,
+    status          TEXT NOT NULL DEFAULT 'active',
     description     TEXT,
     repo_url        TEXT,
+    metadata        JSONB,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
+    updated_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     UNIQUE (project_id, name)
 );
@@ -32,8 +39,10 @@ CREATE TABLE IF NOT EXISTS application_versions (
     id              SERIAL PRIMARY KEY,
     application_id  INTEGER NOT NULL REFERENCES applications(id) ON DELETE CASCADE,
     version         TEXT NOT NULL,
+    status          TEXT,
     git_hash        TEXT,
     description     TEXT,
+    metadata        JSONB,
     created_at      TIMESTAMPTZ NOT NULL DEFAULT now(),
 
     UNIQUE (application_id, version)
@@ -49,10 +58,18 @@ CREATE TABLE IF NOT EXISTS project_version_apps (
 
 CREATE INDEX IF NOT EXISTS idx_projects_name ON projects(name);
 CREATE INDEX IF NOT EXISTS idx_projects_id ON projects(id);
+CREATE INDEX IF NOT EXISTS idx_projects_status ON projects(status);
 
 CREATE INDEX IF NOT EXISTS idx_applications_name ON applications(name);
 CREATE INDEX IF NOT EXISTS idx_applications_id ON applications(id);
+CREATE INDEX IF NOT EXISTS idx_applications_status ON applications(status);
 
 CREATE INDEX IF NOT EXISTS idx_project_versions_version ON project_versions(version);
 CREATE INDEX IF NOT EXISTS idx_application_versions_version ON application_versions(version);
+CREATE INDEX IF NOT EXISTS idx_application_versions_status ON application_versions(status);
+
+CREATE INDEX IF NOT EXISTS idx_projects_metadata ON projects USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_applications_metadata ON applications USING GIN (metadata);
+CREATE INDEX IF NOT EXISTS idx_application_versions_metadata ON application_versions USING GIN (metadata);
+
 END;

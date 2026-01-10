@@ -14,8 +14,10 @@ import (
 
 func NewCreateCommand() *cobra.Command {
 	var (
+		status      string
 		link        string
 		description string
+		metadata    []string
 		queries     *database.Queries
 	)
 
@@ -31,8 +33,10 @@ func NewCreateCommand() *cobra.Command {
 
 	flags := create.Flags()
 	flags.SortFlags = false
-	flags.StringVarP(&link, "link", "l", "", "link to the project")
-	flags.StringVarP(&description, "description", "d", "", "description of the application")
+	flags.StringVarP(&status, "status", "s", "active", "Project status")
+	flags.StringVarP(&link, "link", "l", "", "Project link")
+	flags.StringVarP(&description, "description", "d", "", "Project description")
+	flags.StringArrayVarP(&metadata, "metadata", "m", []string{}, "Metadata key=value pairs")
 
 	create.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true

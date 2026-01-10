@@ -9,6 +9,8 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/sqlc-dev/pqtype"
 )
 
 const checkProjectExistsByName = `-- name: CheckProjectExistsByName :one
@@ -25,65 +27,41 @@ func (q *Queries) CheckProjectExistsByName(ctx context.Context, name string) (bo
 }
 
 const createProject = `-- name: CreateProject :one
-INSERT INTO projects (name, link,  description, created_at)
-VALUES ($1, $2, $3, $4)
-RETURNING id, name, link, description, created_at
+INSERT INTO projects (name, status, link, description, metadata, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7)
+RETURNING id, name, status, link, description, metadata, created_at, updated_at
 `
 
 type CreateProjectParams struct {
 	Name        string
+	Status      string
 	Link        sql.NullString
 	Description sql.NullString
+	Metadata    pqtype.NullRawMessage
 	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (q *Queries) CreateProject(ctx context.Context, arg CreateProjectParams) (Project, error) {
 	row := q.db.QueryRowContext(ctx, createProject,
 		arg.Name,
+		arg.Status,
 		arg.Link,
 		arg.Description,
+		arg.Metadata,
 		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	var i Project
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Status,
 		&i.Link,
 		&i.Description,
+		&i.Metadata,
 		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const createProjectVersion = `-- name: CreateProjectVersion :one
-INSERT INTO project_versions (id, project_id, version, description, created_at)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, project_id, version, description, created_at
-`
-
-type CreateProjectVersionParams struct {
-	ID          int32
-	ProjectID   int32
-	Version     string
-	Description sql.NullString
-	CreatedAt   time.Time
-}
-
-func (q *Queries) CreateProjectVersion(ctx context.Context, arg CreateProjectVersionParams) (ProjectVersion, error) {
-	row := q.db.QueryRowContext(ctx, createProjectVersion,
-		arg.ID,
-		arg.ProjectID,
-		arg.Version,
-		arg.Description,
-		arg.CreatedAt,
-	)
-	var i ProjectVersion
-	err := row.Scan(
-		&i.ID,
-		&i.ProjectID,
-		&i.Version,
-		&i.Description,
-		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -98,73 +76,8 @@ func (q *Queries) DeleteProjectByName(ctx context.Context, name string) error {
 	return err
 }
 
-const getLatestProjectVersionByProjectName = `-- name: GetLatestProjectVersionByProjectName :one
-SELECT id, project_id, version, description, created_at FROM project_versions
-  WHERE project_id = (
-    SELECT id FROM projects WHERE name = $1
-  )
-  ORDER BY created_at DESC
-LIMIT 1
-`
-
-func (q *Queries) GetLatestProjectVersionByProjectName(ctx context.Context, name string) (ProjectVersion, error) {
-	row := q.db.QueryRowContext(ctx, getLatestProjectVersionByProjectName, name)
-	var i ProjectVersion
-	err := row.Scan(
-		&i.ID,
-		&i.ProjectID,
-		&i.Version,
-		&i.Description,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const getNVersionsByProjectName = `-- name: GetNVersionsByProjectName :many
-SELECT id, project_id, version, description, created_at FROM project_versions
-WHERE project_id = (
-  SELECT id FROM projects WHERE name = $1
-)
-ORDER BY created_at DESC
-LIMIT $2
-`
-
-type GetNVersionsByProjectNameParams struct {
-	Name  string
-	Limit int32
-}
-
-func (q *Queries) GetNVersionsByProjectName(ctx context.Context, arg GetNVersionsByProjectNameParams) ([]ProjectVersion, error) {
-	rows, err := q.db.QueryContext(ctx, getNVersionsByProjectName, arg.Name, arg.Limit)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	var items []ProjectVersion
-	for rows.Next() {
-		var i ProjectVersion
-		if err := rows.Scan(
-			&i.ID,
-			&i.ProjectID,
-			&i.Version,
-			&i.Description,
-			&i.CreatedAt,
-		); err != nil {
-			return nil, err
-		}
-		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
-	if err := rows.Err(); err != nil {
-		return nil, err
-	}
-	return items, nil
-}
-
 const getProjectByName = `-- name: GetProjectByName :one
-SELECT id, name, link, description, created_at FROM projects
+SELECT id, name, status, link, description, metadata, created_at, updated_at FROM projects
 WHERE name = $1
 LIMIT 1
 `
@@ -175,9 +88,12 @@ func (q *Queries) GetProjectByName(ctx context.Context, name string) (Project, e
 	err := row.Scan(
 		&i.ID,
 		&i.Name,
+		&i.Status,
 		&i.Link,
 		&i.Description,
+		&i.Metadata,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
@@ -195,7 +111,8 @@ func (q *Queries) GetProjectIdByName(ctx context.Context, name string) (int32, e
 }
 
 const listAllProjects = `-- name: ListAllProjects :many
-SELECT id, name, link, description, created_at FROM projects
+SELECT id, name, status, link, description, metadata, created_at, updated_at FROM projects
+ORDER BY created_at DESC
 `
 
 func (q *Queries) ListAllProjects(ctx context.Context) ([]Project, error) {
@@ -210,9 +127,12 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]Project, error) {
 		if err := rows.Scan(
 			&i.ID,
 			&i.Name,
+			&i.Status,
 			&i.Link,
 			&i.Description,
+			&i.Metadata,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -225,4 +145,114 @@ func (q *Queries) ListAllProjects(ctx context.Context) ([]Project, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const listNProjects = `-- name: ListNProjects :many
+SELECT id, name, status, link, description, metadata, created_at, updated_at FROM projects
+ORDER BY created_at DESC
+LIMIT $1
+`
+
+func (q *Queries) ListNProjects(ctx context.Context, limit int32) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, listNProjects, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Project
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Status,
+			&i.Link,
+			&i.Description,
+			&i.Metadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const listProjectsByStatus = `-- name: ListProjectsByStatus :many
+SELECT id, name, status, link, description, metadata, created_at, updated_at FROM projects
+WHERE status = $1
+ORDER BY created_at DESC
+`
+
+func (q *Queries) ListProjectsByStatus(ctx context.Context, status string) ([]Project, error) {
+	rows, err := q.db.QueryContext(ctx, listProjectsByStatus, status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Project
+	for rows.Next() {
+		var i Project
+		if err := rows.Scan(
+			&i.ID,
+			&i.Name,
+			&i.Status,
+			&i.Link,
+			&i.Description,
+			&i.Metadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateProjectMetadata = `-- name: UpdateProjectMetadata :exec
+UPDATE projects
+SET metadata = $2, updated_at = $3
+WHERE name = $1
+`
+
+type UpdateProjectMetadataParams struct {
+	Name      string
+	Metadata  pqtype.NullRawMessage
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateProjectMetadata(ctx context.Context, arg UpdateProjectMetadataParams) error {
+	_, err := q.db.ExecContext(ctx, updateProjectMetadata, arg.Name, arg.Metadata, arg.UpdatedAt)
+	return err
+}
+
+const updateProjectStatus = `-- name: UpdateProjectStatus :exec
+UPDATE projects
+SET status = $2, updated_at = $3
+WHERE name = $1
+`
+
+type UpdateProjectStatusParams struct {
+	Name      string
+	Status    string
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateProjectStatus(ctx context.Context, arg UpdateProjectStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateProjectStatus, arg.Name, arg.Status, arg.UpdatedAt)
+	return err
 }

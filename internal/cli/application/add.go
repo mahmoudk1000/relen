@@ -24,7 +24,7 @@ func NewAddCommand() *cobra.Command {
 		Use:     "add <project_name> <application_name>",
 		Aliases: []string{"a", "new"},
 		Short:   "add a new application to the project",
-		Args:    cobra.ExactArgs(2),
+		Args:    cobra.RangeArgs(1, 2),
 		PreRun: func(cmd *cobra.Command, args []string) {
 			queries = db.Get()
 		},
@@ -70,7 +70,7 @@ func addApplication(
 
 	exists, err := q.CheckApplicationExistsByName(ctx, database.CheckApplicationExistsByNameParams{
 		Name: prjName,
-		ID:   pID,
+		ProjectID: pID,
 	})
 	if err != nil {
 		return fmt.Errorf("failed checking application existence: %w", err)

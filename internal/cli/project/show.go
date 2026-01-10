@@ -27,13 +27,19 @@ func NewShowCommand() *cobra.Command {
 
 	flags := show.Flags()
 	flags.Bool("json", false, "output in JSON format")
+	flags.Bool("yaml", false, "output in YAML format")
 
 	show.RunE = func(cmd *cobra.Command, args []string) error {
-		var fmtP string
 		show.SilenceUsage = true
 		ctx := cmd.Context()
 
+		var (
+			fmtP string
+			err  error
+		)
+
 		jsonFlag, _ := flags.GetBool("json")
+		yamlFlag, _ := flags.GetBool("yaml")
 
 		p, err := showProject(
 			ctx,
@@ -46,15 +52,15 @@ func NewShowCommand() *cobra.Command {
 
 		switch {
 		case jsonFlag:
-			fmtP, err = utils.FormatJSON(models.ToProject(p))
-			if err != nil {
-				return err
-			}
+			fmtP, err = utils.FormatJSON(p)
+		case yamlFlag:
+			fmtP, err = utils.FormatYAML(p)
 		default:
-			fmtP, err = utils.Format(models.ToProject(p))
-			if err != nil {
-				return err
-			}
+			fmtP, err = utils.Format(p)
+		}
+
+		if err != nil {
+			return err
 		}
 
 		fmt.Println(fmtP)
@@ -69,19 +75,19 @@ func showProject(
 	ctx context.Context,
 	name string,
 	q *database.Queries,
-) (database.Project, error) {
+) (models.Project, error) {
 	exists, err := q.CheckProjectExistsByName(ctx, name)
 	if err != nil {
-		return database.Project{}, fmt.Errorf("failed to check if project exists: %w", err)
+		return models.Project{}, fmt.Errorf("failed to check if project exists: %w", err)
 	}
 	if !exists {
-		return database.Project{}, fmt.Errorf("project '%s' does not exist", name)
+		return models.Project{}, fmt.Errorf("project '%s' does not exist", name)
 	}
 
 	p, err := q.GetProjectByName(ctx, name)
 	if err != nil {
-		return database.Project{}, fmt.Errorf("failed to get project: %w", err)
+		return models.Project{}, fmt.Errorf("failed to get project: %w", err)
 	}
 
-	return p, nil
+	return models.ToProject(p), nil
 }

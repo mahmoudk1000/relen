@@ -26,14 +26,16 @@ func NewListCommand() *cobra.Command {
 
 	flags := list.Flags()
 	flags.Bool("json", false, "Output in JSON format")
+	flags.Int32P("number", "n", 0, "Number of projects to list (0 for all)")
 
 	list.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
 		ctx := cmd.Context()
 
 		jsonFlag, _ := flags.GetBool("json")
+		count, _ := flags.GetInt32("number")
 
-		ps, err := listProjects(ctx, queries)
+		ps, err := listProjects(ctx, count, queries)
 		if err != nil {
 			return err
 		}
@@ -42,12 +44,12 @@ func NewListCommand() *cobra.Command {
 
 		switch {
 		case jsonFlag:
-			fmtP, err = utils.FormatJSON(models.ToProjects(ps))
+			fmtP, err = utils.FormatJSON(ps)
 			if err != nil {
 				return err
 			}
 		default:
-			fmtP, err = utils.Format(models.ToProjects(ps))
+			fmtP, err = utils.Format(ps)
 			if err != nil {
 				return err
 			}
@@ -60,11 +62,21 @@ func NewListCommand() *cobra.Command {
 	return list
 }
 
-func listProjects(ctx context.Context, q *database.Queries) ([]database.Project, error) {
-	ps, err := q.ListAllProjects(ctx)
+func listProjects(ctx context.Context, c int32, q *database.Queries) ([]models.Project, error) {
+	var (
+		ps  []database.Project
+		err error
+	)
+
+	if c == 0 {
+		ps, err = q.ListAllProjects(ctx)
+	} else {
+		ps, err = q.ListNProjects(ctx, c)
+	}
+
 	if err != nil {
 		return nil, err
 	}
 
-	return ps, nil
+	return models.ToProjects(ps), nil
 }

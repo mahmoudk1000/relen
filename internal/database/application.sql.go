@@ -9,145 +9,160 @@ import (
 	"context"
 	"database/sql"
 	"time"
+
+	"github.com/sqlc-dev/pqtype"
 )
 
 const checkApplicationExistsByName = `-- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
-    SELECT 1 FROM applications WHERE applications.name = $1 AND applications.project_id = (
-      SELECT id FROM projects WHERE projects.id = $2
-    )
+    SELECT 1 FROM applications
+    WHERE applications.name = $1 AND applications.project_id = $2
 ) AS exists
 `
 
 type CheckApplicationExistsByNameParams struct {
-	Name string
-	ID   int32
+	Name      string
+	ProjectID int32
 }
 
 func (q *Queries) CheckApplicationExistsByName(ctx context.Context, arg CheckApplicationExistsByNameParams) (bool, error) {
-	row := q.db.QueryRowContext(ctx, checkApplicationExistsByName, arg.Name, arg.ID)
+	row := q.db.QueryRowContext(ctx, checkApplicationExistsByName, arg.Name, arg.ProjectID)
 	var exists bool
 	err := row.Scan(&exists)
 	return exists, err
 }
 
 const createApplication = `-- name: CreateApplication :one
-INSERT INTO applications (project_id, name, description, repo_url, created_at)
-VALUES ($1, $2, $3, $4, $5)
-RETURNING id, project_id, name, description, repo_url, created_at
+INSERT INTO applications (project_id, name, status, description, repo_url, metadata, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING id, project_id, name, status, description, repo_url, metadata, created_at, updated_at
 `
 
 type CreateApplicationParams struct {
 	ProjectID   int32
 	Name        string
+	Status      string
 	Description sql.NullString
 	RepoUrl     sql.NullString
+	Metadata    pqtype.NullRawMessage
 	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 func (q *Queries) CreateApplication(ctx context.Context, arg CreateApplicationParams) (Application, error) {
 	row := q.db.QueryRowContext(ctx, createApplication,
 		arg.ProjectID,
 		arg.Name,
+		arg.Status,
 		arg.Description,
 		arg.RepoUrl,
+		arg.Metadata,
 		arg.CreatedAt,
+		arg.UpdatedAt,
 	)
 	var i Application
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.RepoUrl,
+		&i.Metadata,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const deleteProjectApplicationByName = `-- name: DeleteProjectApplicationByName :one
 DELETE FROM applications
-WHERE applications.name = $1 AND project_id = (
-  SELECT id FROM projects WHERE projects.id = $2
-) RETURNING id, project_id, name, description, repo_url, created_at
+WHERE applications. name = $1 AND project_id = $2
+RETURNING id, project_id, name, status, description, repo_url, metadata, created_at, updated_at
 `
 
 type DeleteProjectApplicationByNameParams struct {
-	Name string
-	ID   int32
+	Name      string
+	ProjectID int32
 }
 
 func (q *Queries) DeleteProjectApplicationByName(ctx context.Context, arg DeleteProjectApplicationByNameParams) (Application, error) {
-	row := q.db.QueryRowContext(ctx, deleteProjectApplicationByName, arg.Name, arg.ID)
+	row := q.db.QueryRowContext(ctx, deleteProjectApplicationByName, arg.Name, arg.ProjectID)
 	var i Application
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.RepoUrl,
+		&i.Metadata,
 		&i.CreatedAt,
+		&i.UpdatedAt,
+	)
+	return i, err
+}
+
+const getApplicationById = `-- name: GetApplicationById :one
+SELECT id, project_id, name, status, description, repo_url, metadata, created_at, updated_at FROM applications
+WHERE id = $1
+`
+
+func (q *Queries) GetApplicationById(ctx context.Context, id int32) (Application, error) {
+	row := q.db.QueryRowContext(ctx, getApplicationById, id)
+	var i Application
+	err := row.Scan(
+		&i.ID,
+		&i.ProjectID,
+		&i.Name,
+		&i.Status,
+		&i.Description,
+		&i.RepoUrl,
+		&i.Metadata,
+		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
 const getApplicationByName = `-- name: GetApplicationByName :one
-SELECT id, project_id, name, description, repo_url, created_at FROM applications
-WHERE applications.name = $1 AND project_id = (
-  SELECT id FROM projects WHERE projects.id = $2
-) LIMIT 1
+SELECT id, project_id, name, status, description, repo_url, metadata, created_at, updated_at FROM applications
+WHERE applications.name = $1 AND project_id = $2
+LIMIT 1
 `
 
 type GetApplicationByNameParams struct {
-	Name string
-	ID   int32
+	Name      string
+	ProjectID int32
 }
 
 func (q *Queries) GetApplicationByName(ctx context.Context, arg GetApplicationByNameParams) (Application, error) {
-	row := q.db.QueryRowContext(ctx, getApplicationByName, arg.Name, arg.ID)
+	row := q.db.QueryRowContext(ctx, getApplicationByName, arg.Name, arg.ProjectID)
 	var i Application
 	err := row.Scan(
 		&i.ID,
 		&i.ProjectID,
 		&i.Name,
+		&i.Status,
 		&i.Description,
 		&i.RepoUrl,
+		&i.Metadata,
 		&i.CreatedAt,
+		&i.UpdatedAt,
 	)
 	return i, err
 }
 
-const getLatestApplicationVersionByApplicationName = `-- name: GetLatestApplicationVersionByApplicationName :one
-SELECT av.id, av.application_id, av.version, av.git_hash, av.description, av.created_at FROM application_versions av
-JOIN applications a ON av.application_id = a.id
-WHERE a.name = $1
-ORDER BY av.created_at DESC
-LIMIT 1
-`
-
-func (q *Queries) GetLatestApplicationVersionByApplicationName(ctx context.Context, name string) (ApplicationVersion, error) {
-	row := q.db.QueryRowContext(ctx, getLatestApplicationVersionByApplicationName, name)
-	var i ApplicationVersion
-	err := row.Scan(
-		&i.ID,
-		&i.ApplicationID,
-		&i.Version,
-		&i.GitHash,
-		&i.Description,
-		&i.CreatedAt,
-	)
-	return i, err
-}
-
-const listProjectApplications = `-- name: ListProjectApplications :many
-SELECT id, project_id, name, description, repo_url, created_at FROM applications
+const listAllProjectApplications = `-- name: ListAllProjectApplications :many
+SELECT id, project_id, name, status, description, repo_url, metadata, created_at, updated_at FROM applications
 WHERE project_id = (
   SELECT id FROM projects WHERE projects.id = $1
 )
+ORDER BY name
 `
 
-func (q *Queries) ListProjectApplications(ctx context.Context, id int32) ([]Application, error) {
-	rows, err := q.db.QueryContext(ctx, listProjectApplications, id)
+func (q *Queries) ListAllProjectApplications(ctx context.Context, id int32) ([]Application, error) {
+	rows, err := q.db.QueryContext(ctx, listAllProjectApplications, id)
 	if err != nil {
 		return nil, err
 	}
@@ -159,9 +174,12 @@ func (q *Queries) ListProjectApplications(ctx context.Context, id int32) ([]Appl
 			&i.ID,
 			&i.ProjectID,
 			&i.Name,
+			&i.Status,
 			&i.Description,
 			&i.RepoUrl,
+			&i.Metadata,
 			&i.CreatedAt,
+			&i.UpdatedAt,
 		); err != nil {
 			return nil, err
 		}
@@ -174,4 +192,82 @@ func (q *Queries) ListProjectApplications(ctx context.Context, id int32) ([]Appl
 		return nil, err
 	}
 	return items, nil
+}
+
+const listApplicationsByStatus = `-- name: ListApplicationsByStatus :many
+SELECT id, project_id, name, status, description, repo_url, metadata, created_at, updated_at FROM applications
+WHERE project_id = $1 AND status = $2
+ORDER BY name
+`
+
+type ListApplicationsByStatusParams struct {
+	ProjectID int32
+	Status    string
+}
+
+func (q *Queries) ListApplicationsByStatus(ctx context.Context, arg ListApplicationsByStatusParams) ([]Application, error) {
+	rows, err := q.db.QueryContext(ctx, listApplicationsByStatus, arg.ProjectID, arg.Status)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Application
+	for rows.Next() {
+		var i Application
+		if err := rows.Scan(
+			&i.ID,
+			&i.ProjectID,
+			&i.Name,
+			&i.Status,
+			&i.Description,
+			&i.RepoUrl,
+			&i.Metadata,
+			&i.CreatedAt,
+			&i.UpdatedAt,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const updateApplicationMetadata = `-- name: UpdateApplicationMetadata :exec
+UPDATE applications
+SET metadata = $2, updated_at = $3
+WHERE id = $1
+`
+
+type UpdateApplicationMetadataParams struct {
+	ID        int32
+	Metadata  pqtype.NullRawMessage
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateApplicationMetadata(ctx context.Context, arg UpdateApplicationMetadataParams) error {
+	_, err := q.db.ExecContext(ctx, updateApplicationMetadata, arg.ID, arg.Metadata, arg.UpdatedAt)
+	return err
+}
+
+const updateApplicationStatus = `-- name: UpdateApplicationStatus :exec
+UPDATE applications
+SET status = $2, updated_at = $3
+WHERE id = $1
+`
+
+type UpdateApplicationStatusParams struct {
+	ID        int32
+	Status    string
+	UpdatedAt time.Time
+}
+
+func (q *Queries) UpdateApplicationStatus(ctx context.Context, arg UpdateApplicationStatusParams) error {
+	_, err := q.db.ExecContext(ctx, updateApplicationStatus, arg.ID, arg.Status, arg.UpdatedAt)
+	return err
 }

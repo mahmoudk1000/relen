@@ -1,36 +1,46 @@
 -- name: CreateApplication :one
-INSERT INTO applications (project_id, name, description, repo_url, created_at)
-VALUES ($1, $2, $3, $4, $5)
+INSERT INTO applications (project_id, name, status, description, repo_url, metadata, created_at, updated_at)
+VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+RETURNING *;
+
+-- name: UpdateApplicationStatus :exec
+UPDATE applications
+SET status = $2, updated_at = $3
+WHERE id = $1;
+
+-- name: UpdateApplicationMetadata :exec
+UPDATE applications
+SET metadata = $2, updated_at = $3
+WHERE id = $1;
+
+-- name: GetApplicationByName :one
+SELECT * FROM applications
+WHERE applications.name = $1 AND project_id = $2
+LIMIT 1;
+
+-- name: GetApplicationById :one
+SELECT * FROM applications
+WHERE id = $1;
+
+-- name: ListAllProjectApplications :many
+SELECT * FROM applications
+WHERE project_id = (
+  SELECT id FROM projects WHERE projects.id = $1
+)
+ORDER BY name;
+
+-- name: ListApplicationsByStatus :many
+SELECT * FROM applications
+WHERE project_id = $1 AND status = $2
+ORDER BY name;
+
+-- name: DeleteProjectApplicationByName :one
+DELETE FROM applications
+WHERE applications. name = $1 AND project_id = $2
 RETURNING *;
 
 -- name: CheckApplicationExistsByName :one
 SELECT EXISTS (
-    SELECT 1 FROM applications WHERE applications.name = $1 AND applications.project_id = (
-      SELECT id FROM projects WHERE projects.id = $2
-    )
+    SELECT 1 FROM applications
+    WHERE applications.name = $1 AND applications.project_id = $2
 ) AS exists;
-
--- name: GetApplicationByName :one
-SELECT * FROM applications
-WHERE applications.name = $1 AND project_id = (
-  SELECT id FROM projects WHERE projects.id = $2
-) LIMIT 1;
-
--- name: DeleteProjectApplicationByName :one
-DELETE FROM applications
-WHERE applications.name = $1 AND project_id = (
-  SELECT id FROM projects WHERE projects.id = $2
-) RETURNING *;
-
--- name: ListProjectApplications :many
-SELECT * FROM applications
-WHERE project_id = (
-  SELECT id FROM projects WHERE projects.id = $1
-);
-
--- name: GetLatestApplicationVersionByApplicationName :one
-SELECT av.* FROM application_versions av
-JOIN applications a ON av.application_id = a.id
-WHERE a.name = $1
-ORDER BY av.created_at DESC
-LIMIT 1;

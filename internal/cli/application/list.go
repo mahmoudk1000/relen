@@ -27,6 +27,7 @@ func NewListCommand() *cobra.Command {
 
 	flags := list.Flags()
 	flags.Bool("json", false, "output in JSON format")
+	flags.Bool("yaml", false, "output in YAML format")
 
 	list.RunE = func(cmd *cobra.Command, args []string) error {
 		cmd.SilenceUsage = true
@@ -34,6 +35,7 @@ func NewListCommand() *cobra.Command {
 		var fmtA string
 		ctx := cmd.Context()
 		jsonFlag, _ := flags.GetBool("json")
+		yamlFlag, _ := flags.GetBool("yaml")
 
 		applications, err := listApplications(ctx, args[0], queries)
 		if err != nil {
@@ -43,6 +45,11 @@ func NewListCommand() *cobra.Command {
 		switch {
 		case jsonFlag:
 			fmtA, err = utils.FormatJSON(applications)
+			if err != nil {
+				return err
+			}
+		case yamlFlag:
+			fmtA, err = utils.FormatYAML(applications)
 			if err != nil {
 				return err
 			}
@@ -71,7 +78,7 @@ func listApplications(
 		return nil, fmt.Errorf("project %s not found: %w", pName, err)
 	}
 
-	ps, err := q.ListProjectApplications(ctx, pId)
+	ps, err := q.ListAllProjectApplications(ctx, pId)
 	if err != nil {
 		return nil, fmt.Errorf("failed to list applications for project %s: %w", pName, err)
 	}

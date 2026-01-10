@@ -7,32 +7,42 @@ package database
 import (
 	"database/sql"
 	"time"
+
+	"github.com/sqlc-dev/pqtype"
 )
 
 type Application struct {
 	ID          int32
 	ProjectID   int32
 	Name        string
+	Status      string
 	Description sql.NullString
 	RepoUrl     sql.NullString
+	Metadata    pqtype.NullRawMessage
 	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type ApplicationVersion struct {
 	ID            int32
 	ApplicationID int32
 	Version       string
+	Status        sql.NullString
 	GitHash       sql.NullString
 	Description   sql.NullString
+	Metadata      pqtype.NullRawMessage
 	CreatedAt     time.Time
 }
 
 type Project struct {
 	ID          int32
 	Name        string
+	Status      string
 	Link        sql.NullString
 	Description sql.NullString
+	Metadata    pqtype.NullRawMessage
 	CreatedAt   time.Time
+	UpdatedAt   time.Time
 }
 
 type ProjectVersion struct {

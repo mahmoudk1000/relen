@@ -33,13 +33,16 @@ func init() {
 }
 
 func main() {
-	dbENV := os.Getenv("RELEN_DATABASE_URL")
-	if dbENV == "" {
-		fmt.Println("RELEN_DATABASE_URL environment variable is not set")
+	dbURL := os.Getenv("RELEN_DATABASE_URL")
+	if dbURL == "" {
+		fmt.Println("Error: RELEN_DATABASE_URL environment variable is not set")
+		fmt.Println(
+			"Example: export RELEN_DATABASE_URL='postgresql://user:pass@localhost:5432/relen'",
+		)
 		os.Exit(1)
 	}
 
-	if err := db.Init(dbENV); err != nil {
+	if err := db.Init(dbURL); err != nil {
 		fmt.Printf("Failed to initialize database: %v\n", err)
 		os.Exit(1)
 	}

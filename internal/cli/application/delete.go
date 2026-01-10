@@ -46,14 +46,14 @@ func deleteApplication(ctx context.Context, pName, aName string, q *database.Que
 
 	if _, err := q.CheckApplicationExistsByName(ctx, database.CheckApplicationExistsByNameParams{
 		Name: aName,
-		ID:   pId,
+		ProjectID: pId,
 	}); err != nil {
 		return err
 	}
 
 	if _, err = q.DeleteProjectApplicationByName(ctx, database.DeleteProjectApplicationByNameParams{
 		Name: aName,
-		ID:   pId,
+		ProjectID: pId,
 	}); err != nil {
 		return fmt.Errorf("failed to delete application: %w", err)
 	}

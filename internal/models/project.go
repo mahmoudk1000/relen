@@ -7,10 +7,13 @@ import (
 )
 
 type Project struct {
-	Name        string `json:"name"`
-	Link        string `json:"link,omitempty"`
-	Description string `json:"description,omitempty"`
-	Created_At  string `json:"created_at"`
+	Name        string         `json:"name"`
+	Status      string         `json:"status,omitempty"`
+	Link        string         `json:"link,omitempty"`
+	Description string         `json:"description,omitempty"`
+	Metadata    map[string]any `json:"metadata,omitempty"`
+	Created_At  string         `json:"created_at"`
+	Updated_At  string         `json:"updated_at,omitempty"`
 }
 
 type FProject struct {
@@ -21,9 +24,11 @@ type FProject struct {
 func ToProject(p database.Project) Project {
 	return Project{
 		Name:        p.Name,
+		Status:      p.Status,
 		Link:        p.Link.String,
 		Description: p.Description.String,
 		Created_At:  p.CreatedAt.Format(time.RFC1123),
+		Updated_At:  p.UpdatedAt.Format(time.RFC1123),
 	}
 }
 

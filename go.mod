@@ -4,6 +4,10 @@ go 1.24.0
 
 require github.com/spf13/cobra v1.10.2
 
+require github.com/sqlc-dev/pqtype v0.3.0
+
+require gopkg.in/yaml.v3 v3.0.1
+
 require (
 	github.com/inconshreveable/mousetrap v1.1.0 // indirect
 	github.com/lib/pq v1.10.9

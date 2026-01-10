@@ -5,12 +5,14 @@ import (
 	"fmt"
 	"reflect"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
-func Format(data any) (string, error) {
+func Format(v any) (string, error) {
 	var sb strings.Builder
 
-	val := reflect.ValueOf(data)
+	val := reflect.ValueOf(v)
 	var sliceVal reflect.Value
 	var elemType reflect.Type
 
@@ -70,11 +72,19 @@ func Format(data any) (string, error) {
 	return sb.String(), nil
 }
 
-func FormatJSON(data any) (string, error) {
-	bytes, err := json.MarshalIndent(data, "", "  ")
+func FormatJSON(v any) (string, error) {
+	bytes, err := json.MarshalIndent(v, "", "  ")
 	if err != nil {
 		return "", err
 	}
 
 	return string(bytes), nil
+}
+
+func FormatYAML(v any) (string, error) {
+	data, err := yaml.Marshal(v)
+	if err != nil {
+		return "", err
+	}
+	return string(data), nil
 }

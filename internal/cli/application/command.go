@@ -22,7 +22,6 @@ func NewApplicationCommand() *cobra.Command {
 
 	application.AddCommand(NewAddCommand())
 	application.AddCommand(NewDeleteCommand())
-	application.AddCommand(NewDescribeCommand())
 	application.AddCommand(NewListCommand())
 
 	return application
